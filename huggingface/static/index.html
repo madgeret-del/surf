@@ -1,0 +1,456 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Surf AI Agent - Hugging Face Spaces</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
+            min-height: 100vh;
+        }
+        .gradient-text {
+            background: linear-gradient(135deg, #00d9ff, #00ff88);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+        .action-card {
+            animation: slideIn 0.3s ease;
+        }
+        @keyframes slideIn {
+            from { opacity: 0; transform: translateY(-10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+    </style>
+</head>
+<body class="text-gray-100">
+    <div class="container mx-auto px-4 py-8 max-w-4xl">
+        <header class="text-center mb-8">
+            <h1 class="text-4xl font-bold gradient-text mb-2">🌊 Surf AI Agent</h1>
+            <p class="text-gray-400 text-lg">Computer Use AI - Control GUI with Natural Language</p>
+            <p class="text-gray-500 text-sm mt-2">
+                <span class="text-xs">Powered by Hugging Face Spaces</span>
+            </p>
+        </header>
+
+        <div class="bg-gray-800/50 backdrop-blur-sm rounded-xl p-6 mb-6 border border-gray-700">
+            <h2 class="text-xl font-semibold text-cyan-400 mb-4">⚙️ Configuration</h2>
+            
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+                <div>
+                    <label class="block text-sm font-medium text-gray-400 mb-1">Base URL</label>
+                    <select id="baseUrl" class="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-cyan-500">
+                        <option value="https://api.openai.com/v1">OpenAI</option>
+                        <option value="https://api.mistral.ai/v1">Mistral</option>
+                        <option value="https://api.anthropic.com/v1">Anthropic</option>
+                        <option value="http://localhost:11434/v1">Ollama (Local)</option>
+                    </select>
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-400 mb-1">Model</label>
+                    <select id="model" class="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-cyan-500">
+                        <option value="gpt-4o-mini">GPT-4o Mini</option>
+                        <option value="gpt-4">GPT-4</option>
+                        <option value="gpt-3.5-turbo">GPT-3.5 Turbo</option>
+                        <option value="mistral-large">Mistral Large</option>
+                        <option value="llama3.2">Llama 3.2</option>
+                    </select>
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-400 mb-1">Temperature</label>
+                    <input type="number" id="temperature" value="0.7" min="0" max="2" step="0.1" 
+                           class="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-cyan-500">
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-400 mb-1">Max Tokens</label>
+                    <input type="number" id="maxTokens" value="4096" min="256" max="8192" 
+                           class="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-cyan-500">
+                </div>
+            </div>
+
+            <div class="mb-4">
+                <label class="block text-sm font-medium text-gray-400 mb-1">API Key</label>
+                <div class="flex gap-2">
+                    <input type="password" id="apiKey" 
+                           placeholder="Enter your API key (stored in browser only)"
+                           class="flex-1 px-3 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-cyan-500">
+                    <button onclick="toggleApiKey()" class="px-4 py-2 bg-gray-600 hover:bg-gray-500 rounded-lg text-sm transition-colors">
+                        👁️ Show
+                    </button>
+                </div>
+            </div>
+
+            <button onclick="saveConfig()" class="w-full bg-gradient-to-r from-cyan-500 to-emerald-500 hover:from-cyan-600 hover:to-emerald-600 text-gray-900 font-semibold py-3 px-6 rounded-lg transition-all duration-300 transform hover:scale-[1.02]">
+                💾 Save Configuration
+            </button>
+
+            <div id="configStatus" class="mt-4 p-3 bg-gray-700/50 rounded-lg text-sm hidden">
+                <span class="text-green-400">✓</span> <span id="configStatusText">Configuration saved to browser storage</span>
+            </div>
+        </div>
+
+        <div class="bg-gray-800/50 backdrop-blur-sm rounded-xl p-6 mb-6 border border-gray-700">
+            <h2 class="text-xl font-semibold text-cyan-400 mb-4">🎯 Give a Command</h2>
+
+            <div class="flex flex-wrap gap-2 mb-4">
+                <button onclick="loadExample('Click at coordinates 100, 200 and type Hello World')" 
+                        class="px-4 py-2 bg-cyan-500/20 border border-cyan-500 text-cyan-400 rounded-lg text-sm hover:bg-cyan-500/30 transition-colors">
+                    Click & Type
+                </button>
+                <button onclick="loadExample('Move the mouse to 500, 300 and double-click')" 
+                        class="px-4 py-2 bg-cyan-500/20 border border-cyan-500 text-cyan-400 rounded-lg text-sm hover:bg-cyan-500/30 transition-colors">
+                    Move & Double-Click
+                </button>
+                <button onclick="loadExample('Scroll down by 100 pixels')" 
+                        class="px-4 py-2 bg-cyan-500/20 border border-cyan-500 text-cyan-400 rounded-lg text-sm hover:bg-cyan-500/30 transition-colors">
+                    Scroll
+                </button>
+                <button onclick="loadExample('Press Ctrl+S to save')" 
+                        class="px-4 py-2 bg-cyan-500/20 border border-cyan-500 text-cyan-400 rounded-lg text-sm hover:bg-cyan-500/30 transition-colors">
+                    Press Key
+                </button>
+                <button onclick="loadExample('Wait 2 seconds, then click at 200, 200')" 
+                        class="px-4 py-2 bg-cyan-500/20 border border-cyan-500 text-cyan-400 rounded-lg text-sm hover:bg-cyan-500/30 transition-colors">
+                    Wait & Click
+                </button>
+            </div>
+
+            <div class="flex gap-4 mb-4">
+                <input type="text" id="instruction" 
+                       placeholder="Type your instruction here... e.g., 'Click at 100,200 and type Hello'"
+                       class="flex-1 px-4 py-3 bg-gray-700 border border-gray-600 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-cyan-500"
+                       onkeypress="if(event.key==='Enter') executeInstruction()">
+                <button onclick="executeInstruction()" 
+                        class="bg-gradient-to-r from-cyan-500 to-emerald-500 hover:from-cyan-600 hover:to-emerald-600 text-gray-900 font-semibold px-6 py-3 rounded-lg transition-all duration-300 transform hover:scale-[1.02] whitespace-nowrap">
+                    ▶️ Execute
+                </button>
+            </div>
+
+            <div id="loading" class="hidden text-center py-8">
+                <div class="inline-block animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-cyan-500 mb-4"></div>
+                <p class="text-cyan-400">Processing with AI...</p>
+            </div>
+
+            <div id="results" class="min-h-[200px]">
+                <p class="text-gray-500 text-center py-8">
+                    Enter an instruction and click Execute to see results
+                </p>
+            </div>
+        </div>
+
+        <div class="bg-gray-800/50 backdrop-blur-sm rounded-xl p-6 border border-gray-700">
+            <h2 class="text-xl font-semibold text-cyan-400 mb-4">ℹ️ About Surf AI Agent</h2>
+            <div class="space-y-4 text-gray-400">
+                <p>
+                    Surf is an AI agent that converts natural language instructions into GUI actions 
+                    (click, type, scroll, etc.). It works with any LLM provider via configurable base URL and API key.
+                </p>
+                <p>
+                    <strong class="text-white">Note:</strong> This is a static demo running in your browser. 
+                    The actual GUI actions are simulated. To connect to a real desktop environment like E2B, 
+                    you would need to deploy the full Surf agent with a backend connection.
+                </p>
+                <div class="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
+                    <div>
+                        <h3 class="text-cyan-400 font-medium mb-1">Supported Actions:</h3>
+                        <ul class="list-disc list-inside space-y-1">
+                            <li>Click</li>
+                            <li>Double-Click</li>
+                            <li>Scroll</li>
+                            <li>Type</li>
+                        </ul>
+                    </div>
+                    <div>
+                        <h3 class="text-cyan-400 font-medium mb-1">&nbsp;</h3>
+                        <ul class="list-disc list-inside space-y-1">
+                            <li>Press Key</li>
+                            <li>Move Mouse</li>
+                            <li>Wait</li>
+                            <li>Focus</li>
+                        </ul>
+                    </div>
+                    <div>
+                        <h3 class="text-cyan-400 font-medium mb-1">Supported Providers:</h3>
+                        <ul class="list-disc list-inside space-y-1">
+                            <li>OpenAI</li>
+                            <li>Mistral</li>
+                            <li>Anthropic</li>
+                            <li>Ollama</li>
+                        </ul>
+                    </div>
+                    <div>
+                        <h3 class="text-cyan-400 font-medium mb-1">&nbsp;</h3>
+                        <ul class="list-disc list-inside space-y-1">
+                            <li>Any OpenAI-compatible</li>
+                            <li>Custom APIs</li>
+                            <li>Local LLMs</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Notification -->
+    <div id="notification" class="fixed top-4 right-4 p-4 bg-gradient-to-r from-cyan-500 to-emerald-500 text-gray-900 font-semibold rounded-lg shadow-lg transform translate-x-[200%] transition-transform duration-300 z-50">
+    </div>
+
+    <script>
+        // Load configuration from localStorage
+        function loadConfig() {
+            const config = localStorage.getItem('surfConfig');
+            if (config) {
+                const c = JSON.parse(config);
+                document.getElementById('baseUrl').value = c.baseUrl || 'https://api.openai.com/v1';
+                document.getElementById('model').value = c.model || 'gpt-4o-mini';
+                document.getElementById('temperature').value = c.temperature || 0.7;
+                document.getElementById('maxTokens').value = c.maxTokens || 4096;
+                document.getElementById('apiKey').value = c.apiKey || '';
+                document.getElementById('configStatus').classList.remove('hidden');
+            }
+        }
+
+        // Save configuration to localStorage
+        function saveConfig() {
+            const config = {
+                baseUrl: document.getElementById('baseUrl').value,
+                model: document.getElementById('model').value,
+                temperature: parseFloat(document.getElementById('temperature').value),
+                maxTokens: parseInt(document.getElementById('maxTokens').value),
+                apiKey: document.getElementById('apiKey').value
+            };
+            localStorage.setItem('surfConfig', JSON.stringify(config));
+            showNotification('✅ Configuration saved!');
+            document.getElementById('configStatus').classList.remove('hidden');
+        }
+
+        // Toggle API key visibility
+        function toggleApiKey() {
+            const input = document.getElementById('apiKey');
+            const button = event.target;
+            if (input.type === 'password') {
+                input.type = 'text';
+                button.textContent = '🔒 Hide';
+            } else {
+                input.type = 'password';
+                button.textContent = '👁️ Show';
+            }
+        }
+
+        // Load example
+        function loadExample(text) {
+            document.getElementById('instruction').value = text;
+            document.getElementById('instruction').focus();
+        }
+
+        // Execute instruction (simulated - runs in browser)
+        function executeInstruction() {
+            const instruction = document.getElementById('instruction').value.trim();
+            const apiKey = document.getElementById('apiKey').value;
+            
+            if (!instruction) {
+                showNotification('⚠️ Please enter an instruction');
+                return;
+            }
+
+            if (!apiKey) {
+                showNotification('⚠️ Please enter your API key');
+                return;
+            }
+
+            // Show loading
+            document.getElementById('loading').classList.remove('hidden');
+            document.getElementById('results').innerHTML = '';
+
+            // Simulate API call (in real deployment, this would call the backend)
+            setTimeout(() => {
+                // Parse the instruction to generate actions
+                const actions = parseInstruction(instruction);
+                displayResults(actions);
+                document.getElementById('loading').classList.add('hidden');
+            }, 1500);
+        }
+
+        // Parse instruction and generate actions (simplified for demo)
+        function parseInstruction(instruction) {
+            const actions = [];
+            const lower = instruction.toLowerCase();
+            
+            // Simple parsing - in real app, this would be done by LLM
+            if (lower.includes('click') || lower.includes('click at')) {
+                const coords = instruction.match(/(\d+),\s*(\d+)/);
+                actions.push({
+                    type: 'click',
+                    params: {
+                        x: coords ? parseInt(coords[1]) : 100,
+                        y: coords ? parseInt(coords[2]) : 200,
+                        button: 'left'
+                    }
+                });
+            }
+            
+            if (lower.includes('double') || lower.includes('double-click')) {
+                const coords = instruction.match(/(\d+),\s*(\d+)/);
+                actions.push({
+                    type: 'double_click',
+                    params: {
+                        x: coords ? parseInt(coords[1]) : 100,
+                        y: coords ? parseInt(coords[2]) : 200,
+                        button: 'left'
+                    }
+                });
+            }
+            
+            if (lower.includes('type') || lower.includes("'")) {
+                const textMatch = instruction.match(/'([^']+)'/);
+                actions.push({
+                    type: 'type',
+                    params: {
+                        text: textMatch ? textMatch[1] : 'Hello World'
+                    }
+                });
+            }
+            
+            if (lower.includes('scroll')) {
+                actions.push({
+                    type: 'scroll',
+                    params: {
+                        delta_x: 0,
+                        delta_y: lower.includes('down') ? 100 : -100
+                    }
+                });
+            }
+            
+            if (lower.includes('press') || lower.includes('key')) {
+                actions.push({
+                    type: 'press_key',
+                    params: {
+                        key: 'Enter',
+                        modifier: null
+                    }
+                });
+            }
+            
+            if (lower.includes('move') || lower.includes('mouse to')) {
+                const coords = instruction.match(/(\d+),\s*(\d+)/);
+                actions.push({
+                    type: 'move_mouse',
+                    params: {
+                        x: coords ? parseInt(coords[1]) : 300,
+                        y: coords ? parseInt(coords[2]) : 400,
+                        relative: false
+                    }
+                });
+            }
+            
+            if (lower.includes('wait')) {
+                const seconds = instruction.match(/(\d+) second/);
+                actions.push({
+                    type: 'wait',
+                    params: {
+                        seconds: seconds ? parseInt(seconds[1]) : 2
+                    }
+                });
+            }
+            
+            // If no actions found, add a default
+            if (actions.length === 0) {
+                actions.push({
+                    type: 'click',
+                    params: { x: 100, y: 200, button: 'left' }
+                });
+            }
+            
+            return actions;
+        }
+
+        // Display results
+        function displayResults(actions) {
+            const resultsDiv = document.getElementById('results');
+            let html = '';
+            
+            html += '<div class="action-card bg-gray-700/50 p-4 rounded-lg mb-4 border border-gray-600">';
+            html += '<h3 class="text-green-400 font-semibold mb-2">✅ Generated ' + actions.length + ' action(s)</h3>';
+            html += '</div>';
+            
+            actions.forEach((action, index) => {
+                html += createActionCard(action, index + 1);
+            });
+            
+            resultsDiv.innerHTML = html;
+        }
+
+        // Create action card
+        function createActionCard(action, number) {
+            const actionType = action.type || 'unknown';
+            const params = action.params || {};
+            
+            let details = '';
+            for (const [key, value] of Object.entries(params)) {
+                details += `<span class="text-gray-400"><strong>${key}:</strong> ${JSON.stringify(value)}</span><br/>`;
+            }
+            
+            return `
+                <div class="action-card bg-gray-800/30 p-4 rounded-lg mb-3 border-l-4 border-cyan-500">
+                    <div class="flex justify-between items-start mb-2">
+                        <span class="text-cyan-400 font-mono text-sm">${number}. ${actionType}</span>
+                    </div>
+                    <div class="text-white mb-2">
+                        ${formatActionDescription(actionType, params)}
+                    </div>
+                    <div class="text-xs text-gray-500 font-mono bg-gray-700 p-2 rounded">
+                        ${details || 'No parameters'}
+                    </div>
+                </div>
+            `;
+        }
+
+        // Format action description
+        function formatActionDescription(type, params) {
+            switch(type) {
+                case 'click':
+                    return `Click at (${params.x}, ${params.y}) with ${params.button || 'left'} button`;
+                case 'double_click':
+                    return `Double-click at (${params.x}, ${params.y})`;
+                case 'type':
+                    return `Type: "${params.text}"`;
+                case 'press_key':
+                    const mod = params.modifier ? params.modifier + '+' : '';
+                    return `Press key: ${mod}${params.key}`;
+                case 'scroll':
+                    return `Scroll by (${params.delta_x || 0}, ${params.delta_y || 0})`;
+                case 'move_mouse':
+                    return `Move mouse to (${params.x}, ${params.y})`;
+                case 'wait':
+                    return `Wait for ${params.seconds} seconds`;
+                case 'focus':
+                    return `Focus on: ${params.target}`;
+                case 'screenshot':
+                    return `Take screenshot`;
+                default:
+                    return `Action: ${type}`;
+            }
+        }
+
+        // Show notification
+        function showNotification(message) {
+            const notification = document.getElementById('notification');
+            notification.textContent = message;
+            notification.classList.remove('translate-x-[200%]');
+            
+            setTimeout(() => {
+                notification.classList.add('translate-x-[200%]');
+            }, 3000);
+        }
+
+        // Initialize
+        document.addEventListener('DOMContentLoaded', function() {
+            loadConfig();
+        });
+    </script>
+</body>
+</html>
