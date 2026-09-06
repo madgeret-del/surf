@@ -1,0 +1,52 @@
+version: '3.8'
+
+services:
+  surf:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: surf-ai-agent
+    ports:
+      - "8080:8080"
+    environment:
+      - PORT=8080
+      - HOST=0.0.0.0
+      - SURF_BASE_URL=${SURF_BASE_URL:-https://api.openai.com/v1}
+      - SURF_API_KEY=${SURF_API_KEY:-}
+      - SURF_MODEL=${SURF_MODEL:-gpt-4o-mini}
+      - SURF_VERBOSE=${SURF_VERBOSE:-false}
+    volumes:
+      - ./logs:/app/logs
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "python", "-c", "import httpx; httpx.get('http://localhost:8080/api/health', timeout=2).raise_for_status()"]
+      interval: 30s
+      timeout: 3s
+      retries: 3
+      start_period: 5s
+    deploy:
+      resources:
+        limits:
+          memory: 2G
+        reservations:
+          memory: 512M
+
+  # For development with hot reload
+  surf-dev:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: surf-ai-agent-dev
+    ports:
+      - "8080:8080"
+    environment:
+      - PORT=8080
+      - HOST=0.0.0.0
+      - DEBUG=true
+      - SURF_BASE_URL=${SURF_BASE_URL:-https://api.openai.com/v1}
+      - SURF_API_KEY=${SURF_API_KEY:-}
+    volumes:
+      - .:/app
+      - ./logs:/app/logs
+    restart: unless-stopped
+    command: ["python", "-m", "surf.web.server"]

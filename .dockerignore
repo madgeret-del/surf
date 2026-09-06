@@ -1,0 +1,24 @@
+# Docker ignore
+.git
+.gitignore
+__pycache__
+*.pyc
+*.pyo
+*.pyd
+.Python
+.env
+.env.local
+.env.*.local
+Dockerfile
+docker-compose*
+README.md
+LICENSE
+CHANGELOG
+*.md
+*.txt
+*.rst
+*.yml
+*.yaml
+*.json
+!requirements.txt
+!setup.py
