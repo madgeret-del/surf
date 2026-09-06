@@ -1,0 +1,602 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Surf AI Agent - GitHub Pages</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+        }
+        .gradient-text {
+            background: linear-gradient(135deg, #00d9ff, #00ff88);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+        .action-card {
+            animation: slideIn 0.3s ease;
+        }
+        @keyframes slideIn {
+            from { opacity: 0; transform: translateY(-10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .pulse {
+            animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+        }
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: .5; }
+        }
+    </style>
+</head>
+<body class="bg-gray-50 text-gray-900 min-h-screen">
+    <div class="container mx-auto px-4 py-8 max-w-4xl">
+        <header class="text-center mb-8">
+            <h1 class="text-4xl font-bold gradient-text mb-2">🌊 Surf AI Agent</h1>
+            <p class="text-gray-600 text-lg">Computer Use AI - Control GUI with Natural Language</p>
+            <p class="text-gray-500 text-sm mt-2">
+                Hosted on GitHub Pages - Static Demo
+            </p>
+        </header>
+
+        <div class="bg-white rounded-xl shadow-lg p-6 mb-6">
+            <h2 class="text-xl font-semibold text-blue-600 mb-4">⚙️ Configuration</h2>
+            
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Base URL</label>
+                    <select id="baseUrl" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
+                        <option value="https://api.openai.com/v1">OpenAI</option>
+                        <option value="https://api.mistral.ai/v1">Mistral</option>
+                        <option value="https://api.anthropic.com/v1">Anthropic</option>
+                        <option value="http://localhost:11434/v1">Ollama (Local)</option>
+                        <option value="https://api.groq.com/v1">Groq</option>
+                        <option value="https://api.cohere.ai/v1">Cohere</option>
+                    </select>
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Model</label>
+                    <select id="model" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
+                        <option value="gpt-4o-mini">GPT-4o Mini</option>
+                        <option value="gpt-4">GPT-4</option>
+                        <option value="gpt-3.5-turbo">GPT-3.5 Turbo</option>
+                        <option value="mistral-large">Mistral Large</option>
+                        <option value="llama3.2">Llama 3.2</option>
+                        <option value="gemini-pro">Gemini Pro</option>
+                    </select>
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Temperature</label>
+                    <input type="number" id="temperature" value="0.7" min="0" max="2" step="0.1" 
+                           class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Max Tokens</label>
+                    <input type="number" id="maxTokens" value="4096" min="256" max="8192" 
+                           class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
+                </div>
+            </div>
+
+            <div class="mb-4">
+                <label class="block text-sm font-medium text-gray-700 mb-1">API Key</label>
+                <div class="flex gap-2">
+                    <input type="password" id="apiKey" 
+                           placeholder="Enter your API key (stored in browser)"
+                           class="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
+                    <button onclick="toggleApiKey()" class="px-4 py-2 bg-gray-100 hover:bg-gray-200 border border-gray-300 rounded-lg text-sm transition-colors">
+                        👁️ Show
+                    </button>
+                </div>
+                <p class="text-xs text-gray-500 mt-1">
+                    🔒 Your API key is stored only in your browser's localStorage
+                </p>
+            </div>
+
+            <button onclick="saveConfig()" class="w-full bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white font-semibold py-3 px-6 rounded-lg transition-all duration-300 transform hover:scale-[1.02]">
+                💾 Save Configuration
+            </button>
+
+            <div id="configStatus" class="mt-4 p-3 bg-green-50 border border-green-200 rounded-lg text-sm hidden">
+                <span class="text-green-600">✓</span> <span id="configStatusText" class="text-green-700">Configuration saved to browser storage</span>
+            </div>
+        </div>
+
+        <div class="bg-white rounded-xl shadow-lg p-6 mb-6">
+            <h2 class="text-xl font-semibold text-blue-600 mb-4">🎯 Give a Command</h2>
+
+            <div class="flex flex-wrap gap-2 mb-4">
+                <button onclick="loadExample('Click at coordinates 100, 200 and type Hello World')" 
+                        class="px-4 py-2 bg-blue-100 border border-blue-300 text-blue-700 rounded-lg text-sm hover:bg-blue-200 transition-colors">
+                    Click & Type
+                </button>
+                <button onclick="loadExample('Move the mouse to 500, 300 and double-click')" 
+                        class="px-4 py-2 bg-blue-100 border border-blue-300 text-blue-700 rounded-lg text-sm hover:bg-blue-200 transition-colors">
+                    Move & Double-Click
+                </button>
+                <button onclick="loadExample('Scroll down by 100 pixels')" 
+                        class="px-4 py-2 bg-blue-100 border border-blue-300 text-blue-700 rounded-lg text-sm hover:bg-blue-200 transition-colors">
+                    Scroll
+                </button>
+                <button onclick="loadExample('Press Ctrl+S to save')" 
+                        class="px-4 py-2 bg-blue-100 border border-blue-300 text-blue-700 rounded-lg text-sm hover:bg-blue-200 transition-colors">
+                    Press Key
+                </button>
+                <button onclick="loadExample('Wait 2 seconds, then click at 200, 200')" 
+                        class="px-4 py-2 bg-blue-100 border border-blue-300 text-blue-700 rounded-lg text-sm hover:bg-blue-200 transition-colors">
+                    Wait & Click
+                </button>
+                <button onclick="loadExample('Take a screenshot of the current window')" 
+                        class="px-4 py-2 bg-blue-100 border border-blue-300 text-blue-700 rounded-lg text-sm hover:bg-blue-200 transition-colors">
+                    Screenshot
+                </button>
+            </div>
+
+            <div class="flex gap-4 mb-4">
+                <input type="text" id="instruction" 
+                       placeholder="Type your instruction here... e.g., 'Click at 100,200 and type Hello'"
+                       class="flex-1 px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                       onkeypress="if(event.key==='Enter') executeInstruction()">
+                <button onclick="executeInstruction()" 
+                        class="bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white font-semibold px-6 py-3 rounded-lg transition-all duration-300 transform hover:scale-[1.02] whitespace-nowrap">
+                    ▶️ Execute
+                </button>
+            </div>
+
+            <div id="loading" class="hidden text-center py-8">
+                <div class="inline-block animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500 mb-4"></div>
+                <p class="text-blue-600">Processing with AI...</p>
+            </div>
+
+            <div id="results" class="min-h-[200px]">
+                <div class="text-center py-8">
+                    <p class="text-gray-500 mb-2">Enter an instruction and click Execute</p>
+                    <p class="text-sm text-gray-400">This is a static demo - actions are simulated in your browser</p>
+                </div>
+            </div>
+        </div>
+
+        <div class="bg-white rounded-xl shadow-lg p-6 mb-6">
+            <h2 class="text-xl font-semibold text-blue-600 mb-4">📚 About Surf AI Agent</h2>
+            <div class="space-y-4 text-gray-700">
+                <p>
+                    <strong>Surf</strong> is an open-source AI agent that converts natural language instructions 
+                    into GUI actions (click, type, scroll, etc.). It works with <strong>any LLM provider</strong> via 
+                    configurable base URL and API key.
+                </p>
+                
+                <div class="bg-blue-50 p-4 rounded-lg border border-blue-200">
+                    <h3 class="font-semibold text-blue-800 mb-2">🎯 Key Features:</h3>
+                    <ul class="list-disc list-inside space-y-1 text-blue-700">
+                        <li>Multi-provider support (OpenAI, Mistral, Anthropic, Groq, etc.)</li>
+                        <li>Configurable base URL and API key</li>
+                        <li>9 GUI action types (click, scroll, type, press key, etc.)</li>
+                        <li>Natural language to actions conversion</li>
+                        <li>Lightweight and fast</li>
+                        <li>Open source (MIT License)</li>
+                    </ul>
+                </div>
+
+                <div class="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
+                    <div>
+                        <h3 class="font-semibold text-blue-600 mb-1">Supported Actions:</h3>
+                        <ul class="list-disc list-inside space-y-1 text-gray-600">
+                            <li>click</li>
+                            <li>double_click</li>
+                            <li>scroll</li>
+                            <li>type</li>
+                        </ul>
+                    </div>
+                    <div>
+                        <h3 class="font-semibold text-blue-600 mb-1">&nbsp;</h3>
+                        <ul class="list-disc list-inside space-y-1 text-gray-600">
+                            <li>press_key</li>
+                            <li>move_mouse</li>
+                            <li>wait</li>
+                            <li>focus</li>
+                        </ul>
+                    </div>
+                    <div>
+                        <h3 class="font-semibold text-blue-600 mb-1">Supported Providers:</h3>
+                        <ul class="list-disc list-inside space-y-1 text-gray-600">
+                            <li>OpenAI</li>
+                            <li>Mistral</li>
+                            <li>Anthropic</li>
+                            <li>Groq</li>
+                        </ul>
+                    </div>
+                    <div>
+                        <h3 class="font-semibold text-blue-600 mb-1">&nbsp;</h3>
+                        <ul class="list-disc list-inside space-y-1 text-gray-600">
+                            <li>Ollama</li>
+                            <li>Cohere</li>
+                            <li>Any OpenAI-compatible</li>
+                            <li>Custom APIs</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="bg-yellow-50 p-4 rounded-lg border border-yellow-200">
+                    <h3 class="font-semibold text-yellow-800 mb-2">⚠️ This is a Static Demo</h3>
+                    <p class="text-yellow-700 text-sm">
+                        This GitHub Pages version is <strong>static only</strong>. It simulates the Surf functionality 
+                        in your browser. For full functionality with real API calls and GUI control:
+                    </p>
+                    <ul class="list-disc list-inside mt-2 text-yellow-700 text-sm">
+                        <li>Deploy the Docker version on RunPod/Railway/Replit</li>
+                        <li>Use the Python library directly</li>
+                        <li>Deploy to Hugging Face Spaces (with backend)</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+
+        <div class="bg-white rounded-xl shadow-lg p-6 mb-6">
+            <h2 class="text-xl font-semibold text-blue-600 mb-4">🚀 Deployment Options</h2>
+            
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div class="bg-gray-50 p-4 rounded-lg border border-gray-200">
+                    <h3 class="font-semibold text-gray-800 mb-2">📦 GitHub Pages (Current)</h3>
+                    <p class="text-sm text-gray-600 mb-2">Static demo only</p>
+                    <ul class="text-sm text-gray-600 space-y-1">
+                        <li>✅ 100% Free</li>
+                        <li>✅ No backend needed</li>
+                        <li>✅ Instant deployment</li>
+                        <li>❌ No real API calls</li>
+                        <li>❌ No GUI control</li>
+                    </ul>
+                </div>
+                
+                <div class="bg-gray-50 p-4 rounded-lg border border-gray-200">
+                    <h3 class="font-semibold text-gray-800 mb-2">🐳 Docker Container</h3>
+                    <p class="text-sm text-gray-600 mb-2">Full functionality</p>
+                    <ul class="text-sm text-gray-600 space-y-1">
+                        <li>✅ Real API calls</li>
+                        <li>✅ Full GUI control</li>
+                        <li>✅ Works on RunPod/Replit</li>
+                        <li>⚠️ Needs 2-4GB RAM</li>
+                        <li>⚠️ Free tiers available</li>
+                    </ul>
+                </div>
+                
+                <div class="bg-gray-50 p-4 rounded-lg border border-gray-200">
+                    <h3 class="font-semibold text-gray-800 mb-2">🤗 Hugging Face Spaces</h3>
+                    <p class="text-sm text-gray-600 mb-2">Static or Docker</p>
+                    <ul class="text-sm text-gray-600 space-y-1">
+                        <li>✅ Free static deployment</li>
+                        <li>✅ Docker with GPU option</li>
+                        <li>✅ Easy to share</li>
+                        <li>✅ Built-in HTTPS</li>
+                    </ul>
+                </div>
+            </div>
+
+            <div class="mt-6 text-center">
+                <a href="https://github.com/madgeret-del/surf" 
+                   class="inline-flex items-center px-6 py-3 bg-gray-900 text-white font-semibold rounded-lg hover:bg-gray-800 transition-colors">
+                    📥 View Full Project on GitHub
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <!-- Notification -->
+    <div id="notification" class="fixed top-4 right-4 p-4 bg-gradient-to-r from-blue-600 to-indigo-600 text-white font-semibold rounded-lg shadow-lg transform translate-x-[200%] transition-transform duration-300 z-50">
+    </div>
+
+    <footer class="text-center py-8 text-gray-500 text-sm border-t border-gray-200 mt-8">
+        <p>Surf AI Agent - Open Source Computer Use AI</p>
+        <p class="mt-1">
+            <a href="https://github.com/madgeret-del/surf" class="text-blue-600 hover:underline">GitHub</a> | 
+            <a href="#" onclick="showLicense()" class="text-blue-600 hover:underline cursor-pointer">MIT License</a>
+        </p>
+    </footer>
+
+    <script>
+        // Load configuration from localStorage
+        function loadConfig() {
+            const config = localStorage.getItem('surfConfig');
+            if (config) {
+                const c = JSON.parse(config);
+                document.getElementById('baseUrl').value = c.baseUrl || 'https://api.openai.com/v1';
+                document.getElementById('model').value = c.model || 'gpt-4o-mini';
+                document.getElementById('temperature').value = c.temperature || 0.7;
+                document.getElementById('maxTokens').value = c.maxTokens || 4096;
+                document.getElementById('apiKey').value = c.apiKey || '';
+                document.getElementById('configStatus').classList.remove('hidden');
+            }
+        }
+
+        // Save configuration to localStorage
+        function saveConfig() {
+            const config = {
+                baseUrl: document.getElementById('baseUrl').value,
+                model: document.getElementById('model').value,
+                temperature: parseFloat(document.getElementById('temperature').value),
+                maxTokens: parseInt(document.getElementById('maxTokens').value),
+                apiKey: document.getElementById('apiKey').value
+            };
+            localStorage.setItem('surfConfig', JSON.stringify(config));
+            showNotification('✅ Configuration saved!');
+            document.getElementById('configStatus').classList.remove('hidden');
+        }
+
+        // Toggle API key visibility
+        function toggleApiKey() {
+            const input = document.getElementById('apiKey');
+            const button = event.target;
+            if (input.type === 'password') {
+                input.type = 'text';
+                button.textContent = '🔒 Hide';
+            } else {
+                input.type = 'password';
+                button.textContent = '👁️ Show';
+            }
+        }
+
+        // Load example
+        function loadExample(text) {
+            document.getElementById('instruction').value = text;
+            document.getElementById('instruction').focus();
+        }
+
+        // Execute instruction (simulated - runs in browser)
+        function executeInstruction() {
+            const instruction = document.getElementById('instruction').value.trim();
+            const apiKey = document.getElementById('apiKey').value;
+            
+            if (!instruction) {
+                showNotification('⚠️ Please enter an instruction');
+                return;
+            }
+
+            if (!apiKey) {
+                showNotification('⚠️ Please enter your API key');
+                return;
+            }
+
+            // Show loading
+            document.getElementById('loading').classList.remove('hidden');
+            document.getElementById('results').innerHTML = '';
+
+            // Simulate API call
+            setTimeout(() => {
+                const actions = parseInstruction(instruction);
+                displayResults(actions);
+                document.getElementById('loading').classList.add('hidden');
+            }, 1500);
+        }
+
+        // Parse instruction and generate actions
+        function parseInstruction(instruction) {
+            const actions = [];
+            const lower = instruction.toLowerCase();
+            
+            // Click actions
+            if (lower.includes('click') || lower.includes('click at')) {
+                const coords = instruction.match(/(\d+),\s*(\d+)/);
+                actions.push({
+                    type: 'click',
+                    params: {
+                        x: coords ? parseInt(coords[1]) : 100,
+                        y: coords ? parseInt(coords[2]) : 200,
+                        button: 'left'
+                    }
+                });
+            }
+            
+            // Double click
+            if (lower.includes('double') || lower.includes('double-click')) {
+                const coords = instruction.match(/(\d+),\s*(\d+)/);
+                actions.push({
+                    type: 'double_click',
+                    params: {
+                        x: coords ? parseInt(coords[1]) : 100,
+                        y: coords ? parseInt(coords[2]) : 200,
+                        button: 'left'
+                    }
+                });
+            }
+            
+            // Type
+            if (lower.includes('type') || lower.includes("'")) {
+                const textMatch = instruction.match(/'([^']+)'/);
+                actions.push({
+                    type: 'type',
+                    params: {
+                        text: textMatch ? textMatch[1] : 'Hello World'
+                    }
+                });
+            }
+            
+            // Scroll
+            if (lower.includes('scroll')) {
+                actions.push({
+                    type: 'scroll',
+                    params: {
+                        delta_x: 0,
+                        delta_y: lower.includes('down') ? 100 : -100
+                    }
+                });
+            }
+            
+            // Press key
+            if (lower.includes('press') || lower.includes('key')) {
+                const keyMatch = instruction.match(/(\w+)/);
+                actions.push({
+                    type: 'press_key',
+                    params: {
+                        key: keyMatch ? keyMatch[0] : 'Enter',
+                        modifier: lower.includes('ctrl') ? 'ctrl' : (lower.includes('shift') ? 'shift' : null)
+                    }
+                });
+            }
+            
+            // Move mouse
+            if (lower.includes('move') || lower.includes('mouse to')) {
+                const coords = instruction.match(/(\d+),\s*(\d+)/);
+                actions.push({
+                    type: 'move_mouse',
+                    params: {
+                        x: coords ? parseInt(coords[1]) : 300,
+                        y: coords ? parseInt(coords[2]) : 400,
+                        relative: false
+                    }
+                });
+            }
+            
+            // Wait
+            if (lower.includes('wait')) {
+                const seconds = instruction.match(/(\d+) second/);
+                actions.push({
+                    type: 'wait',
+                    params: {
+                        seconds: seconds ? parseInt(seconds[1]) : 2
+                    }
+                });
+            }
+            
+            // Screenshot
+            if (lower.includes('screenshot')) {
+                actions.push({
+                    type: 'screenshot',
+                    params: {
+                        fullscreen: true
+                    }
+                });
+            }
+            
+            // Focus
+            if (lower.includes('focus')) {
+                actions.push({
+                    type: 'focus',
+                    params: {
+                        target: 'active window'
+                    }
+                });
+            }
+            
+            // If no actions found, add a default
+            if (actions.length === 0) {
+                actions.push({
+                    type: 'click',
+                    params: { x: 100, y: 200, button: 'left' }
+                });
+            }
+            
+            return actions;
+        }
+
+        // Display results
+        function displayResults(actions) {
+            const resultsDiv = document.getElementById('results');
+            let html = '';
+            
+            html += '<div class="action-card bg-blue-50 p-4 rounded-lg mb-4 border border-blue-200">';
+            html += '<h3 class="text-blue-800 font-semibold mb-2">✅ Generated ' + actions.length + ' action(s)</h3>';
+            html += '</div>';
+            
+            actions.forEach((action, index) => {
+                html += createActionCard(action, index + 1);
+            });
+            
+            resultsDiv.innerHTML = html;
+        }
+
+        // Create action card
+        function createActionCard(action, number) {
+            const actionType = action.type || 'unknown';
+            const params = action.params || {};
+            
+            let icon = '🎯';
+            switch(actionType) {
+                case 'click': icon = '🖱️'; break;
+                case 'double_click': icon = '🖱️🖱️'; break;
+                case 'type': icon = '⌨️'; break;
+                case 'press_key': icon = '⌨️'; break;
+                case 'scroll': icon = '📜'; break;
+                case 'move_mouse': icon = '🖱️'; break;
+                case 'wait': icon = '⏳'; break;
+                case 'screenshot': icon = '📸'; break;
+                case 'focus': icon = '🎯'; break;
+            }
+            
+            let details = '';
+            for (const [key, value] of Object.entries(params)) {
+                details += `<span class="text-gray-600"><strong>${key}:</strong> ${JSON.stringify(value)}</span><br/>`;
+            }
+            
+            return `
+                <div class="action-card bg-white p-4 rounded-lg mb-3 border-l-4 border-blue-500 shadow-sm">
+                    <div class="flex justify-between items-start mb-2">
+                        <span class="text-blue-600 font-mono text-sm">${icon} ${number}. ${actionType}</span>
+                    </div>
+                    <div class="text-gray-800 mb-2">
+                        ${formatActionDescription(actionType, params)}
+                    </div>
+                    <div class="text-xs text-gray-500 font-mono bg-gray-50 p-2 rounded">
+                        ${details || 'No parameters'}
+                    </div>
+                </div>
+            `;
+        }
+
+        // Format action description
+        function formatActionDescription(type, params) {
+            switch(type) {
+                case 'click':
+                    return `Click at (${params.x}, ${params.y}) with ${params.button || 'left'} button`;
+                case 'double_click':
+                    return `Double-click at (${params.x}, ${params.y})`;
+                case 'type':
+                    return `Type: "${params.text}"`;
+                case 'press_key':
+                    const mod = params.modifier ? params.modifier + '+' : '';
+                    return `Press key: ${mod}${params.key}`;
+                case 'scroll':
+                    return `Scroll by (${params.delta_x || 0}, ${params.delta_y || 0})`;
+                case 'move_mouse':
+                    return `Move mouse to (${params.x}, ${params.y})`;
+                case 'wait':
+                    return `Wait for ${params.seconds} second${params.seconds !== 1 ? 's' : ''}`;
+                case 'screenshot':
+                    return `Take ${params.fullscreen ? 'fullscreen ' : ''}screenshot`;
+                case 'focus':
+                    return `Focus on: ${params.target}`;
+                default:
+                    return `Action: ${type}`;
+            }
+        }
+
+        // Show notification
+        function showNotification(message) {
+            const notification = document.getElementById('notification');
+            notification.textContent = message;
+            notification.classList.remove('translate-x-[200%]');
+            
+            setTimeout(() => {
+                notification.classList.add('translate-x-[200%]');
+            }, 3000);
+        }
+
+        // Show license
+        function showLicense() {
+            alert('Surf AI Agent
+Copyright (c) 2026 madgeret-del
+
+Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files (the "Software"), to deal in the Software without restriction, including without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the Software, and to permit persons to whom the Software is furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.');
+        }
+
+        // Initialize
+        document.addEventListener('DOMContentLoaded', function() {
+            loadConfig();
+        });
+    </script>
+</body>
+</html>
